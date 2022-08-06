@@ -10,3 +10,8 @@ models = [
     "MPI-ESM-MR",
     "MRI-CGCM3",
 ]
+
+scenarios = ["rcp45", "rcp85"]
+# scenarios = ["hist", "rcp45", "rcp85"]
+
+eras = ["1950-2009", "2040-2069", "2070-2099"]
