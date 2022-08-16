@@ -101,12 +101,43 @@ def winter_survival(tmin, snow):
     return np.round(winter_survival / 100, 2)
 
 
+def generate_ncar_filepaths(met_dir, tmp_fn, years, model, scenario):
+    """Generate a sequence of yearly ncar filepaths
+    
+    Args:
+        met_dir (pathlib.PosixPath): path to directory containing met data
+        tmp_fn (str): template filename string ready to be formatted according
+            to pattern model, scenario, year (CMIP5) or model, year (daymet)
+        years (list): years to make filepaths for
+        model (str): model nanme as used in file paths
+        scenario (str): scenario name as used in filepaths - set to None for 
+            daymet
+            
+    Returns:
+        filepaths for requested NCAR data subset
+    """
+    if scenario:
+        # CMIP5 data
+        fps = [
+            met_dir.joinpath(model, scenario, tmp_fn.format(model, scenario, year))
+            for year in years
+        ]
+    else:
+        # daymet files will not have a scenario
+        fps = [
+            met_dir.joinpath(model, tmp_fn.format(model, year))
+            for year in years
+        ]
+        
+    return fps
+        
+
 def read_xarray(fp):
     ds = xr.load_dataset(fp)
     return ds
 
 
-def compute_yearly_risk(met_dir, tmp_fn, era, model, scenario, ncpus):
+def compute_yearly_risk(met_dir, tmp_fn, era, model, ncpus, scenario=None):
     """Compute the risk arrays from the NCAR BCSD data
     for a given model, scenario, and era. Takes a single argument
     for multiprocessing purposes. 
@@ -117,8 +148,8 @@ def compute_yearly_risk(met_dir, tmp_fn, era, model, scenario, ncpus):
         tmp_fn (str): template filename string
         era (str): era to be processed, of the form <start year>-<end year>
         model (str): model to be processed
-        scenario (str): scenario to be processed
         ncpus (int): number of cpus to use for multiprocessing
+        scenario (str): scenario to be processed (use None for daymet)
     
     Returns:
         risk_da (xarray.DataArray): DataArray of risk with dimensions model, scenario,
@@ -128,16 +159,26 @@ def compute_yearly_risk(met_dir, tmp_fn, era, model, scenario, ncpus):
     start_year, end_year = era.split("-")
     start_year = int(start_year)
     end_year = int(end_year)
-    years = np.arange(start_year, end_year)
-    fps = [
-        met_dir.joinpath(model, scenario, tmp_fn.format(model, scenario, year))
-        for year in years
-    ]   
+    years = np.arange(start_year, end_year + 1)
+    # fps = [
+    #     met_dir.joinpath(model, scenario, tmp_fn.format(model, scenario, year))
+    #     for year in years
+    # ]
     
-    # Pool-ing seemed to be faster than using this function for a single job/node, but when
+    fps = generate_ncar_filepaths(met_dir, tmp_fn, years, model, scenario)
+    
+    # Pool-ing seemed to be faster than using this using open_mfdataset for a single job/node, but when
     #  submitted altogether things were not completing in reasonable time. So, going with
     #  this for now.
-    with xr.open_mfdataset(fps) as ds:
+
+    def force_latlon_coords(ds):
+        """Helper function to be used for the preprocess argument of xarray.open_mfdataset.
+        The NCAR daymet files do not natively represent those as coordinate variables like
+        the CMIP5 data do, so this function will just ensure that happens.
+        """
+        return ds.assign_coords({coord: ds[coord] for coord in ["latitude", "longitude"]})
+    
+    with xr.open_mfdataset(fps, preprocess=force_latlon_coords) as ds:
         for year in years:
             winter_tmin = (
                 ds["tmin"].sel(time=slice(f"{year - 1}-07-01", f"{year}-06-30")).values
