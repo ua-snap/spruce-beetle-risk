@@ -137,10 +137,32 @@ def read_xarray(fp):
     return ds
 
 
-def compute_yearly_risk(met_dir, tmp_fn, era, model, ncpus, scenario=None):
+def compute_yearly_risk(u, P, X2, X3):
+    """Main equation for computing risk for a given year based on
+    supplied survival parameter values. Written using symbology 
+    consistent with specs doc
+    
+    Args:
+        u (numpy.ndarray): univoltine proportion for a year
+        P (float): predation risk percentage
+        X2 (numpy.ndarray): survival percentage due to fall cooling
+        X3 (numpy.ndarray): survival percentage due to winter cold
+        
+    Returns:
+        2D numpy.ndarray of risk
+    """
+    Xt = (
+        (u / 100) * (P / 100) * (X2 / 100) * (X3 / 100)
+    ) + (
+        (1 - (u / 100)) * (P / 100)/9 * (X2 / 100) ** 2 * (X3 / 100) ** 2
+    )
+    
+    return Xt
+
+
+def process_risk_array(met_dir, tmp_fn, era, model, ncpus, scenario=None):
     """Compute the risk arrays from the NCAR BCSD data
-    for a given model, scenario, and era. Takes a single argument
-    for multiprocessing purposes. 
+    for a given model, scenario, and era.
     
     Args:
         met_dir (pathlib.PosixPath): path to the directory containing met data organized as
@@ -178,6 +200,9 @@ def compute_yearly_risk(met_dir, tmp_fn, era, model, ncpus, scenario=None):
         """
         return ds.assign_coords({coord: ds[coord] for coord in ["latitude", "longitude"]})
     
+    # hard-coding Predation value for now
+    P = 3.01
+    
     with xr.open_mfdataset(fps, preprocess=force_latlon_coords) as ds:
         for year in years:
             winter_tmin = (
@@ -199,11 +224,16 @@ def compute_yearly_risk(met_dir, tmp_fn, era, model, ncpus, scenario=None):
             snow_values = ["low", "med", "high"]
             for snow in snow_values:
                 survival["winter"] = winter_survival(winter_tmin.min(axis=0), snow)
-                year_risk_arr.append(
-                    # just taking the raw product of all three "survival"
-                    #  estimates for a yearly risk metric for now
-                    np.prod(np.array(list(survival.values())), 0)
-                )
+                
+                # year_risk_arr.append(
+                #     # just taking the raw product of all three "survival"
+                #     #  estimates for a yearly risk metric for now
+                #     np.prod(np.array(list(survival.values())), 0)
+                # )
+                
+                # implement master equation
+                year_risk = compute_yearly_risk(survival["summer"], P, survival["fall"], survival["winter"])
+                year_risk_arr.append(year_risk)
 
             yearly_risk_arrs.append(np.array(year_risk_arr))
 
@@ -233,6 +263,126 @@ def compute_yearly_risk(met_dir, tmp_fn, era, model, ncpus, scenario=None):
     )
 
     return risk_da
+
+
+
+def process_risk_components(met_dir, tmp_fn, era, model, ncpus, scenario=None):
+    """Process the risk components for each year from climate data
+    for a given model, scenario, and era.
+    
+    Args:
+        met_dir (pathlib.PosixPath): path to the directory containing met data organized as
+            folders named by model
+        tmp_fn (str): template filename string
+        era (str): era to be processed, of the form <start year>-<end year>
+        model (str): model to be processed
+        ncpus (int): number of cpus to use for multiprocessing
+        scenario (str): scenario to be processed (use None for daymet)
+    
+    Returns:
+        risk_da (xarray.DataArray): DataArray of risk with dimensions model, scenario,
+            snow load level, year, y index, x index
+    """
+    yearly_risk_arrs = []
+    start_year, end_year = era.split("-")
+    start_year = int(start_year)
+    end_year = int(end_year)
+    years = np.arange(start_year, end_year + 1)
+    # fps = [
+    #     met_dir.joinpath(model, scenario, tmp_fn.format(model, scenario, year))
+    #     for year in years
+    # ]
+
+    fps = generate_ncar_filepaths(met_dir, tmp_fn, years, model, scenario)
+
+    # Pool-ing seemed to be faster than using this using open_mfdataset for a single job/node, but when
+    #  submitted altogether things were not completing in reasonable time. So, going with
+    #  this for now.
+
+    def force_latlon_coords(ds):
+        """Helper function to be used for the preprocess argument of xarray.open_mfdataset.
+        The NCAR daymet files do not natively represent those as coordinate variables like
+        the CMIP5 data do, so this function will just ensure that happens.
+        """
+        return ds.assign_coords(
+            {coord: ds[coord] for coord in ["latitude", "longitude"]}
+        )
+
+    # hard-coding Predation value for now
+    P = 3.01
+
+    fall_survival_list = []
+    winter_survival_list = []
+    summer_survival_list = []
+    with xr.open_mfdataset(fps, preprocess=force_latlon_coords) as ds:
+        for year in years:
+            winter_tmin = (
+                ds["tmin"].sel(time=slice(f"{year - 1}-07-01", f"{year}-06-30")).values
+            )
+            tmax = ds["tmax"].sel(time=slice(f"{year}-01-01", f"{year}-12-31")).values
+            tmin = ds["tmin"].sel(time=slice(f"{year}-01-01", f"{year}-12-31")).values
+
+            fall_survival_list.append(
+                np.apply_along_axis(fall_survival, 0, winter_tmin)
+            )
+            # need to iterate over axes indices for summer "survival" because
+            #  both tmin and tmax arrays are needed
+            summer_survival_arr = np.empty(tmin.shape[1:])
+            for i, j in product(range(tmin.shape[1]), range(tmin.shape[2])):
+                summer_survival_arr[i, j] = univoltine(tmin[:, i, j], tmax[:, i, j])
+            summer_survival_list.append(summer_survival_arr)
+
+            # each year will have three risk arrays, one for each level of snowpack
+            winter_snow_list = []
+            snow_values = ["low", "med", "high"]
+            for snow in snow_values:
+                winter_snow_list.append(winter_survival(winter_tmin.min(axis=0), snow))
+
+                # year_risk_arr.append(
+                #     # just taking the raw product of all three "survival"
+                #     #  estimates for a yearly risk metric for now
+                #     np.prod(np.array(list(survival.values())), 0)
+                # )
+
+            winter_survival_list.append(np.array(winter_snow_list))
+
+    # make into arrays
+    summer_survival_arr = np.array(summer_survival_list)
+    fall_survival_arr = np.array(fall_survival_list)
+    # swap the year and snow axes for more intuitive structure
+    #  to (snow, year, y, x) from (year, snow, y, x)
+    winter_survival_arr = np.swapaxes(np.array(winter_survival_list), 0, 1)
+    risk_comp_ds = xr.Dataset(
+        coords={
+            "year": (["year"], years),
+            "model": (["model"], [model]),
+            "scenario": (["scenario"], [scenario]),
+            # need to flip lat/lon arrays as well, since the values are flipped above
+            "longitude": (["y", "x"], np.flipud(ds["longitude"].values)),
+            "latitude": (["y", "x"], np.flipud(ds["latitude"].values)),
+            "snow": (["snow"], snow_values),
+        },
+        # need to expand dims to add an extra for each for the single model, scenario
+        #  we are working with
+        data_vars={
+            "summer_survival": (
+                ["model", "scenario", "year", "y", "x"],
+                np.expand_dims(summer_survival_arr, (0, 1)),
+            ),
+            "fall_survival": (
+                ["model", "scenario", "year", "y", "x"],
+                np.expand_dims(fall_survival_arr, (0, 1)),
+            ),
+            "winter_survival": (
+                ["model", "scenario", "snow", "year", "y", "x"],
+                np.expand_dims(winter_survival_arr, (0, 1)),
+            ),
+        },
+        attrs=dict(description="Climate-based beetle risk",),
+    )
+
+    return risk_comp_ds
+
 
 
 if __name__ == "__main__":
@@ -270,7 +420,7 @@ if __name__ == "__main__":
 
     tic = time.perf_counter()
     # create yearly risk dataarray
-    risk_da = compute_yearly_risk(
+    risk_da = process_risk_array(
         met_dir, args.tmp_fn, args.era, args.model, args.scenario, args.ncpus
     )
     print(f"Yearly risk array created, {round((time.perf_counter() - tic) / 60, 1)}m")
