@@ -81,8 +81,8 @@ def fall_survival(arr):
     dd = thr_arr - window
     # count only positive values and sum
     dd = dd[dd > 0].sum()
-    # ensure value is between 0 and 100
-    fall_survival = np.clip(100 - (dd * 4.76), 0, 100)
+    # ensure value is between 1 and 100
+    fall_survival = np.clip(100 - (dd * 4.76), 1, 100)
 
     return round(fall_survival / 100, 2)
 
@@ -102,7 +102,7 @@ def winter_survival(tmin, snow):
         winter_survival = 300 + 5 * tmin
     else:
         raise ValueError("snow parameter must be one of low, med, or high")
-    winter_survival = np.clip(winter_survival, 0, 100)
+    winter_survival = np.clip(winter_survival, 1, 100)
 
     return np.round(winter_survival / 100, 2)
 
