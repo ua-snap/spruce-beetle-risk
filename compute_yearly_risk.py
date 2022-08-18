@@ -13,7 +13,10 @@ def univoltine(tmin, tmax):
     try:
         idx = np.where(tmax >= 16)[0][0]
     except IndexError:
-        return 0
+        if np.isnan(tmin[0]):
+            return np.nan
+        else:
+            return 0
 
     tmin = tmin[idx + 40 : idx + 90]
     tmax = tmax[idx + 40 : idx + 90]
@@ -63,7 +66,10 @@ def fall_survival(arr):
     try:
         idx = np.where(arr <= -12)[0][0]
     except IndexError:
-        return 1.0
+        if np.isnan(arr[0]):
+            return np.nan
+        else:
+            return 1.0
 
     # return 0 if tmin is ever less than -30
     if arr.min() < -30:
