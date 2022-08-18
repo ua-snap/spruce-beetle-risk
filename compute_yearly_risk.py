@@ -143,27 +143,31 @@ def read_xarray(fp):
     return ds
 
 
-def compute_yearly_risk(u, P, X2, X3):
+def compute_risk(u_t1, u_t2, un_t2, x2_t1, x2_t2, x3_t1, x3_t2):
     """Main equation for computing risk for a given year based on
     supplied survival parameter values. Written using symbology 
     consistent with specs doc
     
     Args:
-        u (numpy.ndarray): univoltine proportion for a year
-        P (float): predation risk percentage
-        X2 (numpy.ndarray): survival percentage due to fall cooling
-        X3 (numpy.ndarray): survival percentage due to winter cold
+        u_t1 (float): univoltinsm survival for year t-1
+        u_t2 (float): univoltinsm survival for year t-2
+        un_t2 (float): univoltinsm survival for year t-2
+        x2_t1 (float): fall survival for year t-1
+        x2_t2 (float): fall survival for year t-2
+        x3_t1 (float): winter survival for year t-1
+        x3_t1 (float): winter survival for year t-2
         
     Returns:
         2D numpy.ndarray of risk
     """
-    Xt = (
-        (u / 100) * (P / 100) * (X2 / 100) * (X3 / 100)
-    ) + (
-        (1 - (u / 100)) * (P / 100)/9 * (X2 / 100) ** 2 * (X3 / 100) ** 2
+    # univoltine predation
+    p = 0.68
+    # semioltine predation
+    sv_p = 0.68 / 9
+    risk = ((un_t2 * sv_p) + (u_t2 * u_t1 * p ** 2) + (u_t2 * p)) * (
+        x2_t2 * x2_t1 * x3_t2 * x3_t1
     )
-    
-    return Xt
+    return risk
 
 
 def process_risk_array(met_dir, tmp_fn, era, model, ncpus, scenario=None):
