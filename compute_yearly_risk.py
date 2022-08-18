@@ -48,15 +48,15 @@ def univoltine(tmin, tmax):
 
     # then determine "survival" due to univoltinism
     if k < 40:
-        x = 50
+        u = 0
     elif 40 <= k < 225:
-        x = 50 + (k - 40) / 14.8
+        u = (k - 40) / 7.4
     elif 225 <= k < 412:
-        k = 62.5 + (k - 225) / 5
+        u = 25 + (k - 225) / 2.5
     else:
-        k = 100
-
-    return round(k / 100, 2)
+        u = 100
+    
+    return round(u / 100, 2)
 
 
 def fall_survival(arr):
