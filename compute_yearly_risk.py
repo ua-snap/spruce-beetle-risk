@@ -353,11 +353,12 @@ def process_risk_components(met_dir, tmp_fn, era, model, ncpus, scenario=None):
             winter_survival_list.append(np.array(winter_snow_list))
 
     # make into arrays
-    summer_survival_arr = np.array(summer_survival_list)
-    fall_survival_arr = np.array(fall_survival_list)
+    # flip along y axis to orient properly
+    summer_survival_arr = np.flip(np.array(summer_survival_list), 1)
+    fall_survival_arr = np.flip(np.array(fall_survival_list), 1)
     # swap the year and snow axes for more intuitive structure
     #  to (snow, year, y, x) from (year, snow, y, x)
-    winter_survival_arr = np.swapaxes(np.array(winter_survival_list), 0, 1)
+    winter_survival_arr = np.flip(np.swapaxes(np.array(winter_survival_list), 0, 1), 2)
     risk_comp_ds = xr.Dataset(
         coords={
             "year": (["year"], years),
