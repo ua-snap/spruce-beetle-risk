@@ -77,7 +77,7 @@ def fall_survival(arr):
 
     window = arr[idx : idx + 21]
     # cooling cutoff values
-    thr_arr = np.arange(-12, -22.5, -0.5)
+    thr_arr = np.arange(-12, -32.5, -1)
     dd = thr_arr - window
     # count only positive values and sum
     dd = dd[dd > 0].sum()
