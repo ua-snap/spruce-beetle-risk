@@ -42,7 +42,7 @@ def univoltine(tmin, tmax):
     #  to get estimate of hours above 17
     # then get the estimate of remaining hours above 17 and add to
     #  running total
-    h_est = ((tmax - 17) / (17 - tmin)) / 2 * 24
+    h_est = (24 * (tmax - 17) / ((tmax - 17) + (17 - tmin)))
     h_est[h_est < 0] = 0
     k += h_est.sum()
 
