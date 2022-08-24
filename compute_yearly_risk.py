@@ -55,7 +55,7 @@ def univoltine(tmin, tmax):
         u = 25 + (k - 225) / 2.5
     else:
         u = 100
-    
+
     return round(u / 100, 2)
 
 
@@ -130,13 +130,10 @@ def generate_ncar_filepaths(met_dir, tmp_fn, years, model, scenario):
         ]
     else:
         # daymet files will not have a scenario
-        fps = [
-            met_dir.joinpath(model, tmp_fn.format(model, year))
-            for year in years
-        ]
-        
+        fps = [met_dir.joinpath(model, tmp_fn.format(model, year)) for year in years]
+
     return fps
-        
+
 
 def read_xarray(fp):
     ds = xr.load_dataset(fp)
@@ -192,16 +189,8 @@ def process_risk_components(met_dir, tmp_fn, era, model, ncpus, scenario=None):
     start_year = int(start_year)
     end_year = int(end_year)
     years = np.arange(start_year, end_year + 1)
-    # fps = [
-    #     met_dir.joinpath(model, scenario, tmp_fn.format(model, scenario, year))
-    #     for year in years
-    # ]
 
     fps = generate_ncar_filepaths(met_dir, tmp_fn, years, model, scenario)
-
-    # Pool-ing seemed to be faster than using this using open_mfdataset for a single job/node, but when
-    #  submitted altogether things were not completing in reasonable time. So, going with
-    #  this for now.
 
     def force_latlon_coords(ds):
         """Helper function to be used for the preprocess argument of xarray.open_mfdataset.
@@ -212,12 +201,13 @@ def process_risk_components(met_dir, tmp_fn, era, model, ncpus, scenario=None):
             {coord: ds[coord] for coord in ["latitude", "longitude"]}
         )
 
-    # hard-coding Predation value for now
-    P = 3.01
-
     fall_survival_list = []
     winter_survival_list = []
     summer_survival_list = []
+
+    # Pool-ing seemed to be faster than using this using open_mfdataset for a single job/node, but when
+    #  submitted altogether things were not completing in reasonable time. So, going with
+    #  this for now.
     with xr.open_mfdataset(fps, preprocess=force_latlon_coords) as ds:
         for year in years:
             winter_tmin = (
@@ -241,13 +231,6 @@ def process_risk_components(met_dir, tmp_fn, era, model, ncpus, scenario=None):
             snow_values = ["low", "med", "high"]
             for snow in snow_values:
                 winter_snow_list.append(winter_survival(winter_tmin.min(axis=0), snow))
-
-                # year_risk_arr.append(
-                #     # just taking the raw product of all three "survival"
-                #     #  estimates for a yearly risk metric for now
-                #     np.prod(np.array(list(survival.values())), 0)
-                # )
-
             winter_survival_list.append(np.array(winter_snow_list))
 
     # make into arrays
@@ -287,7 +270,6 @@ def process_risk_components(met_dir, tmp_fn, era, model, ncpus, scenario=None):
     )
 
     return risk_comp_ds
-
 
 
 if __name__ == "__main__":
