@@ -71,11 +71,11 @@ def fall_survival(arr):
         else:
             return 1.0
 
-    # return 0 if tmin is ever less than -30
-    if arr.min() < -30:
-        return 0.01
-
     window = arr[idx : idx + 21]
+    # return 0 if tmin is ever less than -30
+    if window.min() < -30:
+        return 0.01
+    
     # cooling cutoff values
     thr_arr = np.arange(-12, -32.5, -1)
     dd = thr_arr - window
