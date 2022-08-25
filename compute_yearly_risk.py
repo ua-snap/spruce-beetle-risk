@@ -72,19 +72,14 @@ def fall_survival(arr):
             return 1.0
 
     window = arr[idx : idx + 21]
-    # return 0 if tmin is ever less than -30
-    if window.min() < -30:
-        return 0.01
     
     # cooling cutoff values
-    thr_arr = np.arange(-12, -32.5, -1)
-    dd = thr_arr - window
-    # count only positive values and sum
-    dd = dd[dd > 0].sum()
-    # ensure value is between 1 and 100
-    fall_survival = np.clip(100 - (dd * 4.76), 1, 100)
+    upper_thr = np.arange(-12, -22.5, -0.5)
+    lower_thr = np.arange(-21, -42, -1)
+    fall_survival = round(1 - ((upper_thr - window) / (upper_thr - lower_thr)).max(), 2)
+    fall_survival = np.clip(fall_survival, 0.01, 1)
 
-    return round(fall_survival / 100, 2)
+    return fall_survival
 
 
 def winter_survival(tmin, snow):
