@@ -22,26 +22,32 @@ def univoltine(tmin, tmax):
     tmax = tmax[idx + 40 : idx + 90]
     # hour counter
     k = 0
-    # easy if tmin ever above 17
+    
+    # easy if tmin is ever above 17 - count entire day
     # need to remember indices of values so we can exclude from
-    #  the hourly estimator
+    #  the hourly estimator below
     hot_idx = tmin > 17
     k += 24 * hot_idx.sum()
     # discard indices that counted for entire days above 17C
     tmax = tmax[~hot_idx]
     tmin = tmin[~hot_idx]
-    # need special treatment for tin == 17 as well, as it would
-    #  require division by zero in our estimation algorithm next.
+    
+    # also can immediately discard days where tmax is > 17C
+    cold_idx = tmin < 17
+    # discard indices that counted for entire days above 17C
+    tmax = tmax[~cold_idx]
+    tmin = tmin[~cold_idx]
+    
+    # need special treatment for tmin == 17 as well, as it would
+    #  require division by zero in our estimation algorithm below.
     #  just assume it is above 17 for 75% of the time, or 18 hrs
     equal_idx = tmin == 17
     k += 18 * equal_idx.sum()
     # discard indices that counted for days where tmin == 17C
     tmax = tmax[~equal_idx]
     tmin = tmin[~equal_idx]
-    # then, multiply percent of temp difference above 17 by 24
-    #  to get estimate of hours above 17
-    # then get the estimate of remaining hours above 17 and add to
-    #  running total
+    
+    # finally, can implement our estimation for days where tmin <17 and tmax>17
     h_est = (24 * (tmax - 17) / ((tmax - 17) + (17 - tmin)))
     h_est[h_est < 0] = 0
     k += h_est.sum()
