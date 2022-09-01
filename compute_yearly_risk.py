@@ -33,7 +33,7 @@ def univoltine(tmin, tmax):
     tmin = tmin[~hot_idx]
     
     # also can immediately discard days where tmax is > 17C
-    cold_idx = tmin < 17
+    cold_idx = tmax < 17
     # discard indices that counted for entire days above 17C
     tmax = tmax[~cold_idx]
     tmin = tmin[~cold_idx]
