@@ -1,0 +1,72 @@
+name: pipeline-template
+
+
+description: Implement a climate-driven model of projected risk of future spruce beetle outbreaks
+
+
+commands:
+  metadata:
+    notebook: metadata.ipynb
+    env_spec: default
+  pipeline:
+    notebook: pipeline.ipynb
+    env_spec: default
+  qaqc:
+    notebook: qaqc.ipynb
+    env_spec: default
+
+
+variables:
+  AK_NCAR_DIR: {
+    description: "Path to directory containing NCAR 12km AK hydrologic dataset",
+    default: "/Data/Base_Data/Climate/AK_NCAR_12km"
+  }
+  BASE_DIR: {
+    description: "Path to main directory for data/intermediate files to be backed up",
+    default: "/workspace/Shared/Tech_Projects/beetles/project_data"
+  }
+  OUTPUT_DIR: {
+    description: "Path to folder for storing final data and other products",
+    default: "/workspace/Shared/Tech_Projects/beetles/final_products"
+  }
+  SCRATCH_DIR: {description: "Path to scratch dir for intermediate data files (no default)"}
+  CONDA_INIT: {description: "Path to script for initializing conda in new shell"}
+
+
+packages:
+- python=3.9
+- netcdf4
+- xarray
+- dask
+- rasterio
+- rioxarray
+- pandas
+- geopandas
+- matplotlib
+- jupyterlab
+- wrf-python
+- pyproj
+
+
+channels:
+- conda-forge
+
+
+platforms:
+- linux-64
+- osx-64
+- win-64
+
+
+env_specs:
+  default:
+    description: Default environment spec for running commands
+    packages: []
+    channels: []
+    platforms: []
+
+
+# This is a (potentially temporary) fix to remove warnings 
+# about notebooks without commands
+skip_imports:
+  notebooks: true
