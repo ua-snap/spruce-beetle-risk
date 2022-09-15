@@ -162,13 +162,15 @@ def compute_risk(u_t1, u_t2, un_t2, x2_t1, x2_t2, x3_t1, x3_t2):
     p = 0.68
     # semioltine predation
     sv_p = 0.68 / 9
+    # unsimplified equation
+    # (un_t2 * sv_p * x2_t2 * x2_t1 * x3_t2 * x3_t1) + ((u_t2 * p * x2_t2 * x3_t2) * (u_t1 * p * x2_t1 * x3_t1)) + (u_t2 * p * x2_t2 * x2_t1 * x3_t2 * x3_t1)
     risk = ((un_t2 * sv_p) + (u_t2 * u_t1 * p ** 2) + (u_t2 * p)) * (
         x2_t2 * x2_t1 * x3_t2 * x3_t1
     )
     return risk
 
 
-def process_risk_components(met_dir, tmp_fn, era, model, ncpus, scenario=None):
+def process_risk_components(met_dir, tmp_fn, era, model, scenario=None):
     """Process the risk components for each year from climate data
     for a given model, scenario, and era.
     
@@ -178,7 +180,6 @@ def process_risk_components(met_dir, tmp_fn, era, model, ncpus, scenario=None):
         tmp_fn (str): template filename string
         era (str): era to be processed, of the form <start year>-<end year>
         model (str): model to be processed
-        ncpus (int): number of cpus to use for multiprocessing
         scenario (str): scenario to be processed (use None for daymet)
     
     Returns:
@@ -244,33 +245,81 @@ def process_risk_components(met_dir, tmp_fn, era, model, ncpus, scenario=None):
     risk_comp_ds = xr.Dataset(
         coords={
             "year": (["year"], years),
-            "model": (["model"], [model]),
-            "scenario": (["scenario"], [scenario]),
             # need to flip lat/lon arrays as well, since the values are flipped above
             "longitude": (["y", "x"], np.flipud(ds["longitude"].values)),
             "latitude": (["y", "x"], np.flipud(ds["latitude"].values)),
             "snow": (["snow"], snow_values),
         },
         # need to expand dims to add an extra for each for the single model, scenario
-        #  we are working with
+        #  we are working with.
         data_vars={
             "summer_survival": (
-                ["model", "scenario", "year", "y", "x"],
-                np.expand_dims(summer_survival_arr, (0, 1)),
+                ["year", "y", "x"],
+                summer_survival_arr
             ),
             "fall_survival": (
-                ["model", "scenario", "year", "y", "x"],
-                np.expand_dims(fall_survival_arr, (0, 1)),
+                ["year", "y", "x"],
+                fall_survival_arr,
             ),
             "winter_survival": (
-                ["model", "scenario", "snow", "year", "y", "x"],
-                np.expand_dims(winter_survival_arr, (0, 1)),
+                ["snow", "year", "y", "x"],
+                winter_survival_arr
             ),
         },
-        attrs=dict(description="Climate-based beetle risk",),
+        attrs=dict(description="Climate-based beetle risk components",),
     )
 
     return risk_comp_ds
+
+
+def process_yearly_risk(risk_comp_ds):
+    """Create yearly risk dataset from risk component dataset
+    
+    Args:
+        risk_comp_ds (xarray.Dataset): dataset of risk components created
+            using the process_risk_components function
+        
+    Returns:
+        yearly_risk_ds (xarray.Dataset): dataset of yearly risk
+    """
+    # const_args = {"model": model, "scenario": scenario}
+    snow_values = ["low", "med", "high"]
+    # can only compute risk for years for which there are two previous
+    #   years of risk components available
+    years = risk_comp_ds.year.values[2:]
+    yearly_risk_arrs = []
+    for year in years:
+        u_t2 = risk_comp_ds["summer_survival"].sel(year=(year - 2)).values
+        u_t1 = risk_comp_ds["summer_survival"].sel(year=(year - 1)).values
+        # "not univoltine"
+        un_t2 = np.round(1 - u_t2, 2)
+        x2_t2 = risk_comp_ds["fall_survival"].sel(year=(year - 2)).values
+        x2_t1 = risk_comp_ds["fall_survival"].sel(year=(year - 1)).values
+
+        year_snow_risk = []
+        for snow in snow_values:
+            x3_t2 = risk_comp_ds["winter_survival"].sel(year=(year - 2), snow=snow).values
+            x3_t1 = risk_comp_ds["winter_survival"].sel(year=(year - 1), snow=snow).values
+
+            year_snow_risk.append(compute_risk(u_t1, u_t2, un_t2, x2_t1, x2_t2, x3_t1, x3_t2))
+
+        yearly_risk_arrs.append(np.array(year_snow_risk))
+
+    yearly_risk_arr = np.swapaxes(np.array(yearly_risk_arrs), 0, 1)
+    
+    yearly_risk_ds = xr.Dataset(
+        # need to expand dims to add an extra for each of model, scenario
+        data_vars={"risk": (["snow", "year", "y", "x"], yearly_risk_arr)},
+        coords={
+            "year": (["year"], years),
+            "longitude": (["y", "x"], risk_comp_ds["longitude"].values),
+            "latitude": (["y", "x"], risk_comp_ds["latitude"].values),
+            "snow": (["snow"], snow_values),
+        },
+        attrs=dict(description="Climate-based beetle risk",),
+    )
+    
+    return yearly_risk_ds
 
 
 if __name__ == "__main__":
@@ -286,6 +335,14 @@ if __name__ == "__main__":
         help="Template filename string with gaps for model, scenario, and year",
     )
     parser.add_argument(
+        "--risk_comp_fp",
+        help="File path to write risk component dataset",
+    )
+    parser.add_argument(
+        "--yearly_risk_fp",
+        help="File path to write yearly risk dataset",
+    )
+    parser.add_argument(
         "--era",
         help="Era, or range of years to process given as '<start year>-<end year>",
     )
@@ -295,27 +352,37 @@ if __name__ == "__main__":
     parser.add_argument(
         "--scenario", help="Scenario name, as given in dataset file paths",
     )
-    parser.add_argument(
-        "--ncpus", type=int, help="Number of CPUs to use for multiprocessing",
-    )
-    parser.add_argument(
-        "--risk_fp", help="Number of CPUs to use for multiprocessing",
-    )
 
     # parse the args and unpack
     args = parser.parse_args()
     met_dir = Path(args.met_dir)
-
+    
+    # process risk components
+    print("Creating yearly risk components from input data")
     tic = time.perf_counter()
-    # create yearly risk dataarray
-    risk_da = process_risk_array(
-        met_dir, args.tmp_fn, args.era, args.model, args.scenario, args.ncpus
+    
+    risk_comp_ds = process_risk_components(
+        met_dir,
+        args.tmp_fn,
+        args.era,
+        args.model,
+        args.scenario,
     )
-    print(f"Yearly risk array created, {round((time.perf_counter() - tic) / 60, 1)}m")
 
+    risk_comp_ds.to_netcdf(args.risk_comp_fp)
+    print((
+        "Yearly risk component dataset created in "
+        f"{round((time.perf_counter() - tic) / 60, 1)}m, "
+        f"written to {args.risk_comp_fp}"
+    ))
+    
+    # process yearly risk
+    print("Creating yearly risk dataset from risk components")
     tic = time.perf_counter()
-    # save the risk dataarray in scratch space
-    risk_da.to_netcdf(args.risk_fp)
-    print(
-        f"Yearly risk array written to {args.risk_fp}, {round(time.perf_counter() - tic)}s"
-    )
+    
+    yearly_risk_ds = process_yearly_risk(risk_comp_ds)
+    yearly_risk_ds.to_netcdf(args.yearly_risk_fp)
+    print((
+        f"Yearly risk dataset created in {round(time.perf_counter() - tic)}s, "
+        f"written to {args.yearly_risk_fp}"
+    ))
