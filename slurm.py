@@ -86,8 +86,12 @@ def write_sbatch_yearly_risk(
         f"--yearly_risk_fp {yearly_risk_fp} "
         f"--era {era} "
         f"--model {model} "
-        f"--scenario {scenario} "
     )
+    
+    if scenario:
+        # scenario will only be supplied for future projections
+        pycommands += f"--scenario {scenario} "
+        
     commands = sbatch_head + pycommands
 
     with open(sbatch_fp, "w") as f:

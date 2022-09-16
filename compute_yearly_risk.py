@@ -131,7 +131,7 @@ def generate_ncar_filepaths(met_dir, tmp_fn, years, model, scenario):
         ]
     else:
         # daymet files will not have a scenario
-        fps = [met_dir.joinpath(model, tmp_fn.format(model, year)) for year in years]
+        fps = [met_dir.joinpath(model, tmp_fn.format(year)) for year in years]
 
     return fps
 
