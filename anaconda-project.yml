@@ -31,7 +31,8 @@ variables:
   }
   SCRATCH_DIR: {description: "Path to scratch dir for intermediate data files (no default)"}
   CONDA_INIT: {description: "Path to script for initializing conda in new shell"}
-
+  SLURM_EMAIL: {description: "Email address for slurm"}
+  SLURM_PARTITION: {description: "Name of partition to use for slurming"}
 
 packages:
 - python=3.9
