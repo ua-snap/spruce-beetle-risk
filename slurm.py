@@ -111,3 +111,31 @@ def submit_sbatch(sbatch_fp):
     job_id = out.decode().replace("\n", "").split(" ")[-1]
 
     return job_id
+
+
+def jobs_running(job_ids):
+    """Checks a list of slurb job ids to see if
+    any are queued or still running
+    
+    Args:
+        job_ids (list): list of slurm job ids, can be ints or strings
+        
+    Returns:
+        True if any of the jobs are queued or running, False if not
+    """
+    running = []
+    for jid in job_ids:
+        proc = subprocess.Popen(
+            ["squeue", "-j", str(jid)],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            shell=False
+        )
+        (out, err) = proc.communicate()
+
+        if out.decode("utf-8") != "":
+            running.append(jid)
+        else:
+            pass
+            
+    return len(running) > 0
