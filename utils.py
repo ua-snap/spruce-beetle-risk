@@ -14,8 +14,7 @@ def clip_with_gdal(src_fp, cut_fp):
         cut_fp (pathlike): path to shapefile to use for clipping
     
     Returns:
-        clipped_fp (pathlib.PosixPath): path to the raster that
-            resulted from clipping src_fp to cut_fp
+        clipped_fp (pathlib.PosixPath): path to the raster that resulted from clipping src_fp to cut_fp
     """
     clipped_fp = src_fp.parent.joinpath(src_fp.name.replace(".tif", "_clip.tif"))
     clipped_fp.unlink(missing_ok=True)
@@ -35,8 +34,7 @@ def clip_with_gdal(src_fp, cut_fp):
 
 
 def classify_risk(arr):
-    """Classify an array of risk values as being either
-    low, medium, or high, encoded as 1, 2, or 3, respectively.
+    """Classify an array of risk values as being either low, medium, or high, encoded as 1, 2, or 3, respectively.
     
     Args:
         arr (numpy.ndarray): a 1-D array of risk values
@@ -69,22 +67,17 @@ def classify_risk(arr):
 
 
 def run_classify_clip_mask(yearly_risk_fp, era, snow, ncar_coords, wrf_proj_str, cut_fp, ncar_forest_fp, risk_class_fp):
-    """Executes the process of classifying yearly
-    risk to a requested summary period, clipping
-    to some extent, and masking with a forest raster.
+    """Executes the process of classifying yearly risk to a requested summary period, reprojecting and clipping a classified 2-D slice to some extent, and masking with a forest raster.
     
     Args:
-        yearly_risk_fp (pathlike): path tpo the yearly risk dataset
-            corresponding to the supplied model and scenario
+        yearly_risk_fp (pathlike): path tpo the yearly risk dataset corresponding to the supplied model and scenario
         era (str): era to be processed, of the form <start year>-<end year>
-        snow (str): snowpack category to be processed, one of those present 
-            as coordinates in the yearly risk dataset
+        snow (str): snowpack category to be processed, one of those present as coordinates in the yearly risk dataset
         ncar_coords (numpy.ndarray): dict of x and y coordinates for NCAR grid 
         wrf_proj_str (str): PROJ4 string for the WRF projection used for the NCAR grid
         cut_fp (pathlike): path to shapefile to be use for clipping risk data
         ncar_forest_fp (pathlike): path to the forest mask on the NCAR grid
-        risk_class_fp (pathlib.PosixPath): path where the resulting risk class
-            raster will bet written.
+        risk_class_fp (pathlib.PosixPath): path where the resulting risk class raster will bet written.
             
     Returns:
         None - writes to risk_class_fp and exits.

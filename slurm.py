@@ -13,8 +13,7 @@ def get_yearly_fps(slurm_dir, model, era, scenario=None):
         scenario (str): scenario to work on, defaults to None for daymet data
     
     Returns:
-        tuple of (sbatch_fp, sbatch_out_fp), where sbatch_fp is the sbatch job file,
-            and sbatch_out_fp is the output file
+        tuple of (sbatch_fp, sbatch_out_fp), where sbatch_fp is the sbatch job file, and sbatch_out_fp is the output file
     """
     if scenario:
         attr_str = f"{model}_{scenario}_{era}"
@@ -42,8 +41,7 @@ def write_sbatch_yearly_risk(
     model,
     scenario,
 ):
-    """Write the sbatch job script for copmuting the yearly
-    risk dataset for a given era, model, and scenario
+    """Write the sbatch job script for copmuting the yearly risk dataset for a given era, model, and scenario
     
     Args:
         slurm_email (str): email to use for sbatch job
@@ -114,8 +112,7 @@ def submit_sbatch(sbatch_fp):
 
 
 def jobs_running(job_ids):
-    """Checks a list of slurb job ids to see if
-    any are queued or still running
+    """Checks a list of slurb job ids to see if any are queued or still running
     
     Args:
         job_ids (list): list of slurm job ids, can be ints or strings
