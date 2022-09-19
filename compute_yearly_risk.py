@@ -10,6 +10,15 @@ import xarray as xr
 
 
 def univoltine(tmin, tmax):
+    """The function used for calculating the summer risk component, the 'survival' associated with univoltinism.
+    
+    Args:
+        tmin (numpy.ndarray): a 1-D array of minimum temperatures for a given year
+        tmax (numpy.ndarray): a 1-D array of maximum temperatures for a given year
+        
+    Returns:
+        the summer risk component as a float between 0 and 1
+    """
     try:
         idx = np.where(tmax >= 16)[0][0]
     except IndexError:
@@ -66,8 +75,13 @@ def univoltine(tmin, tmax):
 
 
 def fall_survival(arr):
-    """Execute the fall survival algorithm for an
-    array of temperature minimums for a single year.
+    """Execute the fall risk components for an array of minimum (daily) temperature values.
+    
+    Args:
+        arr (numpy.ndarray): a 1-D array of minimum temperatures for a given winter
+        
+    Returns:
+        fall_survival (float): the fall risk component as a value between 0 and 1
     """
     try:
         idx = np.where(arr <= -12)[0][0]
@@ -89,8 +103,14 @@ def fall_survival(arr):
 
 
 def winter_survival(tmin, snow):
-    """Map a supplied minimum temperature to percent survival
-    based on snowpack
+    """Map a supplied minimum temperature to percent survival based on snowpack
+    
+    Args:
+        tmin (float): a single value to map to a linear gradient of survival based on snowpack
+        snow (str): snowpack level that has an insulating effect, either 'low', 'med', or 'high'
+       
+    Returns:
+        the winter risk component as a float between 0 and 1
     """
     if snow == "low":
         # linear ramp from -20 (100%) to -40 (0%) for no snowpack
@@ -113,12 +133,10 @@ def generate_ncar_filepaths(met_dir, tmp_fn, years, model, scenario):
     
     Args:
         met_dir (pathlib.PosixPath): path to directory containing met data
-        tmp_fn (str): template filename string ready to be formatted according
-            to pattern model, scenario, year (CMIP5) or model, year (daymet)
+        tmp_fn (str): template filename string ready to be formatted according to pattern model, scenario, year (CMIP5) or model, year (daymet)
         years (list): years to make filepaths for
         model (str): model nanme as used in file paths
-        scenario (str): scenario name as used in filepaths - set to None for 
-            daymet
+        scenario (str): scenario name as used in filepaths - set to None for daymet
             
     Returns:
         filepaths for requested NCAR data subset
@@ -136,15 +154,8 @@ def generate_ncar_filepaths(met_dir, tmp_fn, years, model, scenario):
     return fps
 
 
-def read_xarray(fp):
-    ds = xr.load_dataset(fp)
-    return ds
-
-
 def compute_risk(u_t1, u_t2, un_t2, x2_t1, x2_t2, x3_t1, x3_t2):
-    """Main equation for computing risk for a given year based on
-    supplied survival parameter values. Written using symbology 
-    consistent with specs doc
+    """Main equation for computing risk for a given year based on supplied survival parameter values. Written using symbology consistent with specs doc
     
     Args:
         u_t1 (float): univoltinsm survival for year t-1
@@ -160,23 +171,21 @@ def compute_risk(u_t1, u_t2, un_t2, x2_t1, x2_t2, x3_t1, x3_t2):
     """
     # univoltine predation
     p = 0.68
-    # semioltine predation
+    # semivoltine predation
     sv_p = 0.68 / 9
     # unsimplified equation
-    # (un_t2 * sv_p * x2_t2 * x2_t1 * x3_t2 * x3_t1) + ((u_t2 * p * x2_t2 * x3_t2) * (u_t1 * p * x2_t1 * x3_t1)) + (u_t2 * p * x2_t2 * x2_t1 * x3_t2 * x3_t1)
-    risk = ((un_t2 * sv_p) + (u_t2 * u_t1 * p ** 2) + (u_t2 * p)) * (
-        x2_t2 * x2_t1 * x3_t2 * x3_t1
-    )
+    risk = (un_t2 * sv_p * x2_t2 * x2_t1 * x3_t2 * x3_t1)
+    + ((u_t2 * p * x2_t2 * x3_t2) * (u_t1 * p * x2_t1 * x3_t1))
+    + (u_t2 * p * x2_t2 * x2_t1 * x3_t2 * x3_t1)
+    
     return risk
 
 
 def process_risk_components(met_dir, tmp_fn, era, model, scenario=None):
-    """Process the risk components for each year from climate data
-    for a given model, scenario, and era.
+    """Process the risk components for each year from climate data for a given model, scenario, and era.
     
     Args:
-        met_dir (pathlib.PosixPath): path to the directory containing met data organized as
-            folders named by model
+        met_dir (pathlib.PosixPath): path to the directory containing met data organized as folders named by model
         tmp_fn (str): template filename string
         era (str): era to be processed, of the form <start year>-<end year>
         model (str): model to be processed
@@ -195,9 +204,7 @@ def process_risk_components(met_dir, tmp_fn, era, model, scenario=None):
     fps = generate_ncar_filepaths(met_dir, tmp_fn, years, model, scenario)
 
     def force_latlon_coords(ds):
-        """Helper function to be used for the preprocess argument of xarray.open_mfdataset.
-        The NCAR daymet files do not natively represent those as coordinate variables like
-        the CMIP5 data do, so this function will just ensure that happens.
+        """Helper function to be used for the preprocess argument of xarray.open_mfdataset. The NCAR daymet files do not natively represent those as coordinate variables like the CMIP5 data do, so this function will just ensure that happens.
         """
         return ds.assign_coords(
             {coord: ds[coord] for coord in ["latitude", "longitude"]}
@@ -276,8 +283,7 @@ def process_yearly_risk(risk_comp_ds):
     """Create yearly risk dataset from risk component dataset
     
     Args:
-        risk_comp_ds (xarray.Dataset): dataset of risk components created
-            using the process_risk_components function
+        risk_comp_ds (xarray.Dataset): dataset of risk components created using the process_risk_components function
         
     Returns:
         yearly_risk_ds (xarray.Dataset): dataset of yearly risk
