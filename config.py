@@ -13,7 +13,7 @@ from wrf import PolarStereographic
 from pyproj import Proj, Transformer
 # project scripts
 import slurm
-import utils
+from classify_clip_mask import run_classify_clip_mask
 
 
 ncar_dir = Path(os.getenv("AK_NCAR_DIR"))
