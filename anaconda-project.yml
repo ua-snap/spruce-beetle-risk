@@ -5,14 +5,14 @@ description: Implement a climate-driven model of projected risk of future spruce
 
 
 commands:
-  metadata:
-    notebook: metadata.ipynb
-    env_spec: default
   pipeline:
     notebook: pipeline.ipynb
     env_spec: default
-  qaqc:
-    notebook: qaqc.ipynb
+  qc:
+    notebook: qc.ipynb
+    env_spec: default
+  metadata:
+    notebook: metadata.ipynb
     env_spec: default
 
 
