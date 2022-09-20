@@ -132,8 +132,13 @@ def jobs_running(job_ids):
         
         out_str = out.decode("utf-8")
         # either "invalid job" or just shows the squeue table header
-        if out_str != "" or len(out_str.split()) == 8:
-            running.append(jid)
+        if out_str != "":
+            if len(out_str.split()) > 8:
+                running.append(jid)
+            else:
+                # this is the case where not yet "invalid job"
+                #  but squeue still shows header
+                pass
         else:
             pass
             

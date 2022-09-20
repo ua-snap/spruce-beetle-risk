@@ -68,6 +68,7 @@ temp_ncar_clip_fp = scratch_dir.joinpath("ncar_template_clipped_3338.tif")
 ncar_forest_fp = scratch_dir.joinpath("ak_forest_mask_ncar_3338.tif")
 
 models = [
+    # NCAR filenames use only CCSM4 instead of NCAR-CCSM4
     "CCSM4",
     "GFDL-ESM2M",
     "HadGEM2-ES",
@@ -76,7 +77,7 @@ models = [
 
 scenarios = ["rcp45", "rcp85"]
 
-eras = ["2010-2039", "2040-2069", "2060-2099"]
+eras = ["2010-2039", "2040-2069", "2070-2099"]
 
 # all projections will have years 2010-2099
 # need to start with 2008 as yearly risk calculation
