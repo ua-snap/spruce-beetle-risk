@@ -15,6 +15,12 @@ anaconda-project run pipeline
 to create the necessary environment and open the pipeline notebook. 
 Executing this command for the first time may take a while (~15 minutes or more). 
 
+The quality control notebook is available for checking the data. Run it with
+
+```
+anaconda-project run qc
+```
+
 #### Environment variables
 
 Running the above command will also ensure that the required environment variables are set, which are:
@@ -80,7 +86,9 @@ This section goes into a little bit of detail on the model / algorithm itself.
 * The final formula for risk for a given year $t$ is:
 
 $$((1 - u_{t - 2}) * \frac{P}{9} * X2_{t - 2} * X2_{t - 1} * X3_{t - 2} * X3_{t - 1}) +$$
+
 $$(u_{t - 2} * X2_{t - 2} * X3_{t - 2} * u_{t - 1} * X2_{t - 1} * X3_{t - 1} * P^2) +$$
+
 $$(u_{t - 2} * P * X2_{t - 2} * X2_{t - 1} * X3_{t - 2} * X3_{t - 1})$$
 
 where
