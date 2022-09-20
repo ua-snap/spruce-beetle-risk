@@ -85,7 +85,7 @@ def run_classify_clip_mask(yearly_risk_fp, era, snow, ncar_coords, wrf_proj_str,
     start_year, end_year = [int(year) for year in era.split("-")]
     year_sl = slice(start_year, end_year)
     with xr.open_dataset(yearly_risk_fp) as ds:
-        era_risk_arr = ds["risk"].sel(year=slice(start_year, end_year), snow=snow).values
+        era_risk_arr = ds["risk"].sel(year=year_sl, snow=snow).values
 
     # classify risk
     risk_class_arr = np.apply_along_axis(

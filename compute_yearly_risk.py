@@ -164,7 +164,7 @@ def compute_risk(u_t1, u_t2, un_t2, x2_t1, x2_t2, x3_t1, x3_t2):
         x2_t1 (float): fall survival for year t-1
         x2_t2 (float): fall survival for year t-2
         x3_t1 (float): winter survival for year t-1
-        x3_t1 (float): winter survival for year t-2
+        x3_t2 (float): winter survival for year t-2
         
     Returns:
         2D numpy.ndarray of risk
@@ -173,10 +173,12 @@ def compute_risk(u_t1, u_t2, un_t2, x2_t1, x2_t2, x3_t1, x3_t2):
     p = 0.68
     # semivoltine predation
     sv_p = 0.68 / 9
-    # unsimplified equation
-    risk = (un_t2 * sv_p * x2_t2 * x2_t1 * x3_t2 * x3_t1)
-    + ((u_t2 * p * x2_t2 * x3_t2) * (u_t1 * p * x2_t1 * x3_t1))
-    + (u_t2 * p * x2_t2 * x2_t1 * x3_t2 * x3_t1)
+    # full, unsimplified equation
+    # risk = (un_t2 * sv_p * x2_t2 * x2_t1 * x3_t2 * x3_t1) + ((u_t2 * p * x2_t2 * x3_t2) * (u_t1 * p * x2_t1 * x3_t1)) + (u_t2 * p * x2_t2 * x2_t1 * x3_t2 * x3_t1)
+    # simplified by pulling out (x2_t2 * x2_t1 * x3_t2 * x3_t1)
+    risk = ((un_t2 * sv_p) + (u_t2 * u_t1 * p ** 2) + (u_t2 * p)) * (
+        x2_t2 * x2_t1 * x3_t2 * x3_t1
+    )
     
     return risk
 
