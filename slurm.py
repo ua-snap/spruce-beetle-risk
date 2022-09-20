@@ -129,8 +129,10 @@ def jobs_running(job_ids):
             shell=False
         )
         (out, err) = proc.communicate()
-
-        if out.decode("utf-8") != "":
+        
+        out_str = out.decode("utf-8")
+        # either "invalid job" or just shows the squeue table header
+        if out_str != "" or len(out_str.split()) == 8:
             running.append(jid)
         else:
             pass
