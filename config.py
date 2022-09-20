@@ -12,7 +12,6 @@ import rioxarray
 from wrf import PolarStereographic
 from pyproj import Proj, Transformer
 # project scripts
-import luts
 import slurm
 import utils
 
@@ -67,3 +66,19 @@ temp_ncar_fp = scratch_dir.joinpath("ncar_template_3338.tif")
 temp_ncar_clip_fp = scratch_dir.joinpath("ncar_template_clipped_3338.tif")
 # forest mask that has been regridded to NCAR grid
 ncar_forest_fp = scratch_dir.joinpath("ak_forest_mask_ncar_3338.tif")
+
+models = [
+    "CCSM4",
+    "GFDL-ESM2M",
+    "HadGEM2-ES",
+    "MRI-CGCM3",
+]
+
+scenarios = ["rcp45", "rcp85"]
+
+eras = ["2010-2039", "2040-2069", "2060-2099"]
+
+# all projections will have years 2010-2099
+# need to start with 2008 as yearly risk calculation
+#   requires risk components from two years prior
+full_future_era = "2008-2099"
