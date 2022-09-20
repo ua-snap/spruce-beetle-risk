@@ -79,7 +79,9 @@ This section goes into a little bit of detail on the model / algorithm itself.
 * Risk components are defined for each year, but the yearly risk value requires some risk components that go back as far as two years. 
 * The final formula for risk for a given year $t$ is:
 
-$$((1 - u)_{t - 2} * \frac{P}{9} * X2_{t - 2} * X2_{t - 1} * X3_{t - 2} * X3_{t - 1}) + (u_{t - 2} * P * X2_{t - 2} * X3_{t - 2} * u_{t - 1} * P * X2_{t - 1} * X3_{t - 1}) + (u_{t - 2} * P * X2_{t - 2} * X2_{t - 1} * X3_{t - 2} * X3_{t - 1})$$
+$$((1 - u_{t - 2}) * \frac{P}{9} * X2_{t - 2} * X2_{t - 1} * X3_{t - 2} * X3_{t - 1}) +$$
+$$(u_{t - 2} * X2_{t - 2} * X3_{t - 2} * u_{t - 1} * X2_{t - 1} * X3_{t - 1} * P^2) +$$
+$$(u_{t - 2} * P * X2_{t - 2} * X2_{t - 1} * X3_{t - 2} * X3_{t - 1})$$
 
 where
 
