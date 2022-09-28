@@ -70,7 +70,7 @@ The email address to use for slurm jobs.
 
 `SLURM_PARTITION`
 
-The name of parition to use for slurm jobs.
+The name of the partition (e.g., 'main') to use for slurm jobs.
 
 
 ## Model info 

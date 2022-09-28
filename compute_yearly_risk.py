@@ -147,7 +147,7 @@ def generate_ncar_filepaths(met_dir, tmp_fn, years, model, scenario):
         met_dir (pathlib.PosixPath): path to directory containing met data
         tmp_fn (str): template filename string ready to be formatted according to pattern model, scenario, year (CMIP5) or model, year (daymet)
         years (list): years to make filepaths for
-        model (str): model nanme as used in file paths
+        model (str): model name as used in file paths
         scenario (str): scenario name as used in filepaths - set to None for daymet
             
     Returns:
