@@ -4,45 +4,45 @@ This repo contains the code used for producing a dataset of projected climate-dr
 
 ## Running the pipeline
 
-The pipeline can be exectued using the [pipeline](pipeline.ipynb) notebook.
-
-This repo utilizes `anaconda-project` for dependency management and pipeline execution. With an updated version of `anaconda-project` installed and available in a shell, run 
+This project utilizes `conda` to manage dependencies. To run any part of the pipeline, create an environment from the `enviroment.yml` file via
 
 ```
-anaconda-project run pipeline
+conda env create -f environment.yml
 ```
 
-to create the necessary environment and open the pipeline notebook. 
-Executing this command for the first time may take a while (~15 minutes or more). 
-
-The quality control notebook is available for checking the data. Run it with
+This will create a conda env named `spruce-beetle-risk`. Activate the environment via 
 
 ```
-anaconda-project run qc
+conda activate spruce-beetle-risk
 ```
+
+and then set the environment variables listed below.
+
+Then, run the pipeline with either `jupyter lab` or `jupyter notebook` to start a Jupyter server, and open / execute the `pipeline.ipynb`, `qc.ipynb`, and `metadata.ipynb` notebooks, in that order. 
 
 #### Environment variables
 
-Running the above command will also ensure that the required environment variables are set, which are:
+The following variables need to be set prior to starting a Jupyter instance as directed above. The values used for the 'production data' are provided in the `production_env_vars.sh` script for SNAP reference.
 
 `AK_NCAR_DIR`
 
 The directory containing the 12km Alaska.
-* default value: `/Data/Base_Data/Climate/AK_NCAR_12km`
 
 `BASE_DIR`
 
 The base directory for storing project data that should be backed up.
-* default value: `/workspace/Shared/Tech_Projects/beetles/project_data`
 
 `OUTPUT_DIR`
 
 The output directory where final products are placed.
-* default value: `/workspace/Shared/Tech_Projects/beetles/final_products`
 
 `SCRATCH_DIR`
 
 The scratch directory for storing project data which does not need to be backed up. This one does not have a default and can be set to a directory in your personal scratch space in `/atlas_scratch` if working on Atlas.
+
+`PROJECT_DIR`
+
+The path to this repository. 
 
 `CONDA_INIT`
 
