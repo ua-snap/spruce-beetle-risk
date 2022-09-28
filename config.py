@@ -1,19 +1,7 @@
 """Setup file for pipeline notebook"""
 
 import os
-import shutil
-import subprocess
-from itertools import product
 from pathlib import Path
-import numpy as np
-import rasterio as rio
-import xarray as xr
-import rioxarray
-from wrf import PolarStereographic
-from pyproj import Proj, Transformer
-# project scripts
-import slurm
-from classify_clip_mask import run_classify_clip_mask
 
 
 ncar_dir = Path(os.getenv("AK_NCAR_DIR"))
