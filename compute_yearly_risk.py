@@ -18,6 +18,9 @@ def univoltine(tmin, tmax):
         
     Returns:
         the summer risk component as a float between 0 and 1
+
+    Notes:
+        hard-coded "magic" values below are determined from available literature on univoltinsim in these beetles, where a relationship between prevlanece of univoltinism and accumulated heat above 17 C and below between 40 and 90 days post-first-flight, which occurs at 16 C. 
     """
     try:
         idx = np.where(tmax >= 16)[0][0]
@@ -91,9 +94,13 @@ def fall_survival(arr):
         else:
             return 1.0
 
+    # Literature suggests that an ~21-day window of cooling of ~1/2 degree C per day 
+    #  is about as extreme as most beetles can handle. Beyond that, mortality starts
+    #  to occur, proportional to the severity / shock of that cooling.
     window = arr[idx : idx + 21]
     
-    # cooling cutoff values
+    # cooling cutoff values - the upper and lower thr have different slopes
+    #  to account for seemingly non-linear cold-tolerance accumulation through time.
     upper_thr = np.arange(-12, -22.5, -0.5)
     lower_thr = np.arange(-21, -42, -1)
     fall_survival = round(1 - ((upper_thr - window) / (upper_thr - lower_thr)).max(), 2)
@@ -112,14 +119,19 @@ def winter_survival(tmin, snow):
     Returns:
         the winter risk component as a float between 0 and 1
     """
+    # the values below correspond to a linear mapping of minimum temperature (between
+    #  the two bounds given, to % survival such that the bounds correpsond to 0 and 100% 
+    #  survival. So if e.g. tmin == -30 under low snow, that will correspond to 50% 
+    #  survival. The tmin-to-survival rate / slope is constant at -5% per degree for 
+    #  any amount of snow, but the intercept changes for each. 
     if snow == "low":
         # linear ramp from -20 (100%) to -40 (0%) for no snowpack
         winter_survival = 200 + 5 * tmin
     elif snow == "med":
-        # linear ramp from -30 (100%) to -50 (0%) for no snowpack
+        # linear ramp from -30 (100%) to -50 (0%) for medium snowpack
         winter_survival = 250 + 5 * tmin
     elif snow == "high":
-        # linear ramp from -40 (100%) to -60 (0%) for no snowpack
+        # linear ramp from -40 (100%) to -60 (0%) for heavy  snowpack
         winter_survival = 300 + 5 * tmin
     else:
         raise ValueError("snow parameter must be one of low, med, or high")
@@ -169,9 +181,10 @@ def compute_risk(u_t1, u_t2, un_t2, x2_t1, x2_t2, x3_t1, x3_t2):
     Returns:
         2D numpy.ndarray of risk
     """
-    # univoltine predation
+    # survival based on univoltine predation rate
     p = 0.68
-    # semivoltine predation
+    # semivoltine predation survival was determined to be about 9 times lower than univoltine. 
+    #  Overwinterin as adults is a gamechanger. 
     sv_p = 0.68 / 9
     # full, unsimplified equation
     # risk = (un_t2 * sv_p * x2_t2 * x2_t1 * x3_t2 * x3_t1) + ((u_t2 * p * x2_t2 * x3_t2) * (u_t1 * p * x2_t1 * x3_t1)) + (u_t2 * p * x2_t2 * x2_t1 * x3_t2 * x3_t1)
