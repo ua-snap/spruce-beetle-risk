@@ -85,14 +85,12 @@ def run_classify_clip_mask(yearly_risk_fp, era, snow, ncar_coords, wrf_proj_str,
     start_year, end_year = [int(year) for year in era.split("-")]
     year_sl = slice(start_year, end_year)
     with xr.open_dataset(yearly_risk_fp) as ds:
-        era_risk_arr = ds["risk"].sel(year=year_sl, snow=snow).values
-
-    # classify risk
-    risk_class_arr = np.apply_along_axis(
-        classify_risk,
-        0,
-        ds["risk"].sel(snow=snow, year=year_sl).values,
-    ).astype(np.uint8)
+        # classify risk
+        risk_class_arr = np.apply_along_axis(
+            classify_risk,
+            0,
+            ds["risk"].sel(snow=snow, year=year_sl).values,
+        ).astype(np.uint8)
 
     # create an xarray.DataArray for writing risk class
     #  data to georeferenced file
