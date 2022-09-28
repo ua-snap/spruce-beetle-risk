@@ -49,7 +49,6 @@ risk_class_dir.mkdir(exist_ok=True)
 out_risk_dir = output_dir.joinpath("risk_class")
 out_risk_dir.mkdir(exist_ok=True)
 
-# daymet_comp_fp = scratch_dir.joinpath("yearly_risk_components_daymet.nc")
 # path to directory where slurm scripts (jobs and outputs) will be written
 slurm_dir = scratch_dir.joinpath("slurm")
 slurm_dir.mkdir(exist_ok=True, parents=True)
