@@ -4,13 +4,13 @@ This repo contains the code used for producing a dataset of projected climate-dr
 
 ## Running the pipeline
 
-This project utilizes `conda` to manage dependencies. To run any part of the pipeline, create an environment from the `enviroment.yml` file via
+This project utilizes `conda` to manage dependencies. To run any part of the pipeline, create an environment from the `environment.yml` file via
 
 ```
 conda env create -f environment.yml
 ```
 
-This will create a conda env named `spruce-beetle-risk`. Activate the environment via 
+This will create a conda environment named `spruce-beetle-risk`. Activate the environment via 
 
 ```
 conda activate spruce-beetle-risk
@@ -22,7 +22,7 @@ Then, run the pipeline with either `jupyter lab` or `jupyter notebook` to start 
 
 #### Environment variables
 
-The following variables need to be set prior to starting a Jupyter instance as directed above. The values used for the 'production data' are provided in the `production_env_vars.sh` script for SNAP reference.
+The following variables need to be set prior to starting a Jupyter instance as directed above. The values used for the "production" data are provided in the `production_env_vars.sh` script for SNAP reference.
 
 `AK_NCAR_DIR`
 
@@ -70,7 +70,7 @@ The email address to use for slurm jobs.
 
 `SLURM_PARTITION`
 
-The name of the partition (e.g., 'main') to use for slurm jobs.
+The name of parition to use for slurm jobs.
 
 
 ## Model info 
