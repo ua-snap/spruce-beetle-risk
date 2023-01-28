@@ -33,11 +33,13 @@ def clip_with_gdal(src_fp, cut_fp):
     return clipped_fp
 
 
-def classify_risk(arr):
+def classify_risk(arr, med_thr=0.12, count_prop=0.5):
     """Classify an array of risk values as being either low, medium, or high, encoded as 1, 2, or 3, respectively.
     
     Args:
         arr (numpy.ndarray): a 1-D array of risk values
+        med_thr (float): the minimum yearly risk threshold for medium/moderate risk class
+        count_prop (float): the proportion of total years for which the annual risk thresholds should be exceeded
         
     Returns:
         risk_class (int): risk class, either 1, 2, or 3
@@ -47,18 +49,17 @@ def classify_risk(arr):
     assert(len(arr.shape) == 1)
     
     # risk classes are based on whether number of years over some
-    #  threshold is greater than half of total years
-    half = arr.shape[0] / 2
+    #  threshold is greater than some number of total years
+    count = arr.shape[0] * count_prop
     
     # high and medium risk thresholds
     high_thr = 0.24
-    med_thr = 0.12
     
     if any(np.isnan(arr)):
         risk_class = 0
-    elif (arr >= high_thr).sum() >= half:
+    elif (arr >= high_thr).sum() >= arr.shape[0] * 0.5:
         risk_class = 3
-    elif (arr >= med_thr).sum() >= half:
+    elif (arr >= med_thr).sum() >= count:
         risk_class = 2
     else:
         risk_class = 1
