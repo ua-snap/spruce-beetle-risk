@@ -33,7 +33,7 @@ def clip_with_gdal(src_fp, cut_fp):
     return clipped_fp
 
 
-def classify_risk(arr, med_thr=0.12, count_prop=0.5):
+def classify_risk(arr, med_thr=0.04, count_prop=0.75):
     """Classify an array of risk values as being either low, medium, or high, encoded as 1, 2, or 3, respectively.
     
     Args:
