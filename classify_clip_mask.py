@@ -116,5 +116,8 @@ def run_classify_clip_mask(yearly_risk_fp, era, snow, ncar_coords, wrf_proj_str,
             mask = mask_src.read(1).astype(bool)
             arr[~mask] = 0
             src.write(arr, 1)
+            src.update_tags(
+                TIFFTAG_IMAGEDESCRIPTION="Value Index: 0=unforested, 1=low risk, 2=moderate risk, 3=high risk,"
+            )
             
     return None
